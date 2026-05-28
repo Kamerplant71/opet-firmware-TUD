@@ -19,6 +19,8 @@
 #define Temp_Sensor__None			0
 #define Temp_Sensor__MAX31865		1
 #define Temp_Sensor__MCP9600		2
+#define Temp_Sensor__MAX31856		3
+
 
 //===========================================================================================
 // BOARD HARDWARE CONFIG DEFINITIONS:
@@ -34,17 +36,22 @@
 #define PCBconfig_Vswitch_is_1CL_Relay	// use<PCBconfig_Vswitch_is_MAX4665> for MAX4665 analog range selection switch PCB rev <=1.3 
 										// or <PCBconfig_Vswitch_is_1CL_Relay> for 1 coil latch relay for rev 1.4
 										
-#define PCBconfig_Curr_switch_is_2CL_Relay	// use<PCBconfig_Curr_switch_is_2CL_Relay> for 2 coil latching relay to switch current amp range PCB rev <=1.3
+#define PCBconfig_Curr_switch_is_1CL_Relay	// use<PCBconfig_Curr_switch_is_2CL_Relay> for 2 coil latching relay to switch current amp range PCB rev <=1.3
 											// or <PCBconfig_Curr_switch_is_1CL_Relay> for 1 coil latch relay for switch current amp range rev 1.4
 
 #define PCBconfig_JTAG_is_disabled // use <PCBconfig_JTAG_is_enabled> JTAG is enabled at controller fuse, else <PCBconfig_JTAG_is_disabled>
 
-#define PCBconfig_TEMP_is_enabled 0 // use <PCBconfig_TEMP_is_enabled 1> to enable temperature sensor readout by default, 
+#define PCBconfig_TEMP_is_enabled 1 // use <PCBconfig_TEMP_is_enabled 1> to enable temperature sensor readout by default, 
 									// or <PCBconfig_TEMP_is_enabled 0> to disable
 									// also configured as EEPROM in SysConfig
 				
-#define PCBconfig_TEMP_Sensor_Type (Temp_Sensor__None)	// see above table of sensor type definitions to configure connected temperature readout on IOextender header
+#define PCBconfig_TEMP_Sensor_Type (Temp_Sensor__MAX31856)	// see above table of sensor type definitions to configure connected temperature readout on IOextender header
 															// also configured as EEPROM in SysConfig
+
+#define PCBconfig_TEMP_Heat_Monitoring_enabled // use <PCBconfig_TEMP_Heat_Monitoring_enabled> when using the modular heat dissipation device otherwise <PCBconfig_TEMP_Heat_Monitoring_enabled>
+
+#define PCBconfig_TEMP_Heat_Monitoring_devices 1 // Number of heat dissipation devices   
+
 
 #define Line_Freq_50		//use <Line_Freq_60> for 60Hz line frequency and <Line_Freq_50> for 50Hz
 
@@ -62,8 +69,8 @@
 	#define TEMP_MEAS_TIMER_MUILT 100	// 80 = ~500ms @ 5ms;
 #endif /* Line_Freq_50 */
 
-#define DeviceName "OPET_R1.4B"
-#define FirmwareVersion "V1.16A-D08M03Y24"
+#define DeviceName "OPET_R1.4C"
+#define FirmwareVersion "V1.16A-D08M03Y70"
 
 //===========================================================================================
 // INCLUDE Libraries
@@ -322,8 +329,14 @@
 				#define SET__Status_RangeCurrHoldUp (SETBIT(SysStatus_B, 3))
 				#define CLR__Status_RangeCurrHoldUp (CLRBIT(SysStatus_B, 3))
 				#define is_RangeCurrHoldUp ((SysStatus_B & BIT(3)))
-//		Bit4:	none
-//		Bit5:	none
+//		Bit4:	Heat dissipation device Temperature status
+				#define SET__Status_HEAT_NTC_Over_Temp (SETBIT(SysStatus_B, 4))
+				#define CLR__Status_HEAT_NTC_Over_Temp (CLRBIT(SysStatus_B, 4))
+				#define is_Status_HEAT_NTC_Over_Temp (SysStatus_B & BIT(4))
+//		Bit5:	Heat dissipation device offline
+				#define SET__Status_HEAT_NTC_offline (SETBIT(SysStatus_B, 5))
+				#define CLR__Status_HEAT_NTC_offline (CLRBIT(SysStatus_B, 5))
+				#define is_Status_HEAT_NTC_offline (SysStatus_B & BIT(5))
 //		Bit6:	none
 //		Bit7:	none
 	
@@ -397,6 +410,11 @@
 //		Bit6:	none
 //		Bit7:	none
 	
+
+//Temperature alert for heat dissipation device
+#define is_ADC121C021_ALERT_Active   (!is_EXP_DIO_2_Set) //Active low configuration
+
+
 //===========================================================================================
 // EXTERN VARIABLES and STRUCTURES
 extern volatile uint8_t SysStatus_A;
@@ -410,6 +428,9 @@ extern volatile uint8_t Temp_Sensor_Type;
 extern volatile uint8_t EEMEM_Written;
 extern volatile uint8_t Timer_Control_Match;
 extern volatile uint8_t Timer_Temp_Meas_Match;
+extern volatile float TEMP_MAX_Heat_dissipation;  
+extern volatile uint8_t TEMP_Heat_dissipation_devices;
+
 
 //===========================================================================================
 // EXTERN EEPROM VARIABLES
@@ -419,6 +440,8 @@ extern EEMEM uint8_t EROM_Timer_Temp_Meas_Match;
 extern EEMEM uint8_t EROM_SysConfig;
 extern EEMEM uint8_t EROM_SysControl;
 extern EEMEM uint8_t EROM_Temp_Sensor_Type;
+extern EEMEM float EROM_TEMP_MAX_Heat_dissipation; 
+extern EEMEM uint8_t EROM_TEMP_Heat_dissipation_devices;
 
 //===========================================================================================
 // FUNCTION Prototypes

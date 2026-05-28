@@ -22,6 +22,7 @@
 #include "MPPT_PCB_MCU__Range.h"
 #include "MPPT_PCB_MCU__PI_CTR.h"
 #include "MPPT_PCB_MCU__IV_Trans.h"
+#include "MPPT_PCB_MCU__TEMP.h"
 
 //===========================================================================================
 // VARIABLES and STRUCTURES
@@ -381,6 +382,11 @@ void UART_Execute_Command(char *Address, char *Value){
 				COM_Add_QuestMark_To_OutSTR_No_Sep();
 				itoa (IV_Report, Value, 10);
 				COM_Add_To_OutSTR_with_Sep(Value);
+				if((SysConfig & BIT(0))){ //Add module temperature if available
+					FloatToString(Value, AI_RTD_Temp);  
+					COM_Add_To_OutSTR_with_Sep(Value);
+				}
+
 				UART_WriteString (&OutSTR[0]);
 				CLR__COM_Status_IV_Buffer_Ready;
 				CLR__Status_NewIvDataAvailable;
@@ -1124,6 +1130,35 @@ void UART_Execute_Command(char *Address, char *Value){
 			goto UART_Execute_Command_END;
 		}		
 	}
+
+	COM_Copy_To_OutSTR_From_Start("TEMP?");
+	if (COM_Compare_to_OutStr(Address)) {
+		FloatToString(Value, AI_NTC_Temp_1);
+		COM_Add_To_OutSTR_with_Sep(Value);
+		FloatToString(Value, AI_NTC_Temp_2);
+		COM_Add_To_OutSTR_with_Sep(Value);
+		if(is_SysConfig_TEMP_On) {		
+			FloatToString(Value, AI_RTD_Temp);
+			COM_Add_To_OutSTR_with_Sep(Value);
+		}
+	
+		#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
+			for (uint8_t i =0; i<8; i++){
+				FloatToString(Value, AI_HEAT_NTC_Temp[i]);
+				COM_Add_To_OutSTR_with_Sep(Value);			
+			}
+
+		#endif
+
+		UART_WriteString (&OutSTR[0]);
+		CLR__Status_MainTimerOverRun; // clear timer overrun flag
+		goto UART_Execute_Command_END;
+	}
+
+
+
+
+
 	// END: EEPROM Commands
 	//##############################
 	

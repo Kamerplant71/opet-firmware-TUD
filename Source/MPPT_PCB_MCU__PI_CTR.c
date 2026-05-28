@@ -23,6 +23,7 @@
 #include "MPPT_PCB_MCU__Range.h"
 #include "MPPT_PCB_MCU__PI_CTR.h"
 #include "MPPT_PCB_MCU__IV_Trans.h"
+#include "MPPT_PCB_MCU__TEMP.h"
 
 //===========================================================================================
 // MEMSPACE DATA

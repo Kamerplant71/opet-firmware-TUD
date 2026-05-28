@@ -1,4 +1,4 @@
-MPPT_PCB_MCU__com.d MPPT_PCB_MCU__com.o: .././MPPT_PCB_MCU__com.c \
+MPPT_PCB_MCU__TEMP.d MPPT_PCB_MCU__TEMP.o: .././MPPT_PCB_MCU__TEMP.c \
  .././MPPT_PCB_MCU__Main.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\io.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\sfr_defs.h \
@@ -26,7 +26,7 @@ MPPT_PCB_MCU__com.d MPPT_PCB_MCU__com.o: .././MPPT_PCB_MCU__com.c \
  .././MPPT_PCB_MCU__Com.h .././MPPT_PCB_MCU__IO.h \
  .././MPPT_PCB_MCU__EROM.h .././MPPT_PCB_MCU__LOAD_CTR.h \
  .././MPPT_PCB_MCU__Range.h .././MPPT_PCB_MCU__PI_CTR.h \
- .././MPPT_PCB_MCU__IV_Trans.h
+ .././MPPT_PCB_MCU__IV_Trans.h .././MPPT_PCB_MCU__TEMP.h
 
 .././MPPT_PCB_MCU__Main.h:
 
@@ -89,3 +89,5 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\
 .././MPPT_PCB_MCU__PI_CTR.h:
 
 .././MPPT_PCB_MCU__IV_Trans.h:
+
+.././MPPT_PCB_MCU__TEMP.h:

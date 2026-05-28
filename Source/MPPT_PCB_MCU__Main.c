@@ -23,6 +23,7 @@
 #include "MPPT_PCB_MCU__Range.h"
 #include "MPPT_PCB_MCU__PI_CTR.h"
 #include "MPPT_PCB_MCU__IV_Trans.h"
+#include "MPPT_PCB_MCU__TEMP.h"
 
 //===========================================================================================
 // GLOBAL VARIABLES and STRUCTURES
@@ -40,6 +41,8 @@ volatile uint8_t Timer_Control_Counter;
 volatile uint16_t Timer_Temp_Meas_Counter;
 volatile uint8_t Timer_Control_Match;
 volatile uint8_t Timer_Temp_Meas_Match;
+volatile float TEMP_MAX_Heat_dissipation;  
+volatile uint8_t TEMP_Heat_dissipation_devices;
 
 //Convert 16to8 bit integer
 typedef union {
@@ -58,6 +61,9 @@ EEMEM uint8_t EROM_Timer_Temp_Meas_Match = TEMP_MEAS_TIMER_MUILT;
 EEMEM uint8_t EROM_SysConfig = (PCBconfig_TEMP_is_enabled); // see board config definitions section in Main.h
 EEMEM uint8_t EROM_SysControl = 0; // autostart EROM system control
 EEMEM uint8_t EROM_Temp_Sensor_Type = PCBconfig_TEMP_Sensor_Type; // see board config definitions section in Main.h
+EEMEM float EROM_TEMP_MAX_Heat_dissipation = 70.0; // X degree or higher of the heat dissipation device and output should turn off 
+EEMEM uint8_t EROM_TEMP_Heat_dissipation_devices = PCBconfig_TEMP_Heat_Monitoring_devices; // Number of active dissipation devices
+
 
 //===========================================================================================
 // MAIN Function
@@ -102,12 +108,11 @@ int main(void)
 	// enable watchdog with 2 seconds timer
 	wdt_enable(WDTO_2S);
 	wdt_reset();
-	
 	// initialize IO Expander
 	DIOExp_config_init();
 	DIOExp_Write_Outputs(DIO_REG_GPOI, DIOE_PORT_A_STATE, DIOE_PORT_B_STATE);
 		
-	// Read RS485 ADDRESS
+	// Read RS485 ADDRESSf
 	RS485_get_com_address_external_pins();
 	
 	// Initialize SPI interface (ADC & DAC conversion) - default state... (set6 for main ADC & DAC, changes for PT100 ADC)
@@ -160,7 +165,16 @@ int main(void)
 		else if (Temp_Sensor_Type == Temp_Sensor__MCP9600) {
 			TEMP_MCP9600_Setup();
 		}
+		else if (Temp_Sensor_Type == Temp_Sensor__MAX31856){
+			TEMP_MAX31856_Setup();
+		}
 	}
+
+	//Setup heat dissipation temperature sensors
+	#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
+		Temp_monitoring_Setup();
+	#endif
+
 	Set_DAC_Output_RAW(65535);	// Reset DAC to max voltage (low current VOC)
 	Meas_Analog_Inputs(); // measure AIs
 		
@@ -216,7 +230,44 @@ int main(void)
 						// TODO add some timer here as the 18bit ADC needs 320ms to convert
 						AI_RTD_Temp = TEMP_MCP9600_Measure();
 					}
+					else if (Temp_Sensor_Type == Temp_Sensor__MAX31856){
+						AI_RTD_Temp = TEMP_MAX31856_Measure();
+					}
 				}
+
+				//Measure temp heat dissipation device 
+				#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
+					Read_Temp_All_ADC121C021();
+					
+					//Set temp flag if temperature is too high
+					uint8_t temp_flag =0;
+					for (uint8_t i =0; i<8; i++){
+						if(AI_HEAT_NTC_Temp[i] >=TEMP_MAX_Heat_dissipation){
+							temp_flag = 1;
+						}
+					}
+
+					if(temp_flag || is_ADC121C021_ALERT_Active){
+						SET__Status_HEAT_NTC_Over_Temp;
+					}
+					else{
+						CLR__Status_HEAT_NTC_Over_Temp;
+					}
+
+					//Check number of valid readings
+					uint8_t number_active_devices = 0;
+					for (uint8_t i =0; i<8; i++){
+						number_active_devices +=  AI_HEAT_ADC_MASK[i]; 
+					}
+
+					if(number_active_devices < TEMP_Heat_dissipation_devices ){ // If less devices then expected, gice error
+						SET__Status_HEAT_NTC_offline;
+					}
+					else{
+						CLR__Status_HEAT_NTC_offline;	
+					}
+				#endif
+
 				// reset RTD Cal flag
 				CLR__Timer_TEMP_MEAS_Flag;	// Clear Timer flag at the end...
 			}
@@ -261,6 +312,11 @@ void Set_DDR_and_Default_State(){
 			DDR__DO__EXP_DIO_1;
 			DDR__DI__EXP_DIO_3;
 		}
+	    else if (Temp_Sensor_Type == Temp_Sensor__MAX31856) {
+	        SET__EXP_DIO_1;      
+	        DDR__DO__EXP_DIO_1;  
+	        DDR__DI__EXP_DIO_3;
+	    }
 		else if (Temp_Sensor_Type == Temp_Sensor__MCP9600) {
 			DDR__DI__EXP_DIO_1;
 			DDR__DI__EXP_DIO_2;
@@ -268,6 +324,14 @@ void Set_DDR_and_Default_State(){
 			DDR__DI__EXP_DIO_4;
 		}
 	}
+
+	//Heat monitoring device active
+	#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
+		DDR__DI__EXP_DIO_2; //Alert pin as input USE D2 IN HARDWARE 	
+		CLR__EXP_DIO_2;		//external pull-up
+	#endif 
+
+	
 	// FAN latching relay control
 	DDR__LRELAY_FAN_Off;
 	DDR__LRELAY_FAN_On;

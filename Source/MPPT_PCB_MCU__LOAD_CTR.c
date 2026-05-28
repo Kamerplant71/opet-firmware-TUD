@@ -23,6 +23,7 @@
 #include "MPPT_PCB_MCU__Range.h"
 #include "MPPT_PCB_MCU__PI_CTR.h"
 #include "MPPT_PCB_MCU__IV_Trans.h"
+#include "MPPT_PCB_MCU__TEMP.h"
 
 //===========================================================================================
 // MEMSPACE DATA
@@ -188,7 +189,7 @@ void LOAD_CTR_MAIN(){
 				CLR__LED_Output_On;
 				CLR__Output_On; // disable PI-CTR output to keep at VOC
 				CLR__SysControl_Trans_Meas; // chancel Transient measurement
-			}
+			}	
 			else {
 				SET__Status_Ouput_On;
 				SET__LED_Output_On;
@@ -428,7 +429,7 @@ void Process_Error_LED_State(){
 bool Check_if_Active_Errors_Output_Disabled(){
 	/* this function checks if there are any active errors that cause disabling of the output */
 	// TODO the Current bypass might need a timeout function at witch output off is initiated!
-	if (is_Status_NTC1_Over_Temp || is_Status_NTC2_Over_Temp || is_Status_Bias_Error ) {
+	if (is_Status_NTC1_Over_Temp || is_Status_NTC2_Over_Temp || is_Status_Bias_Error || is_Status_HEAT_NTC_Over_Temp || is_Status_HEAT_NTC_offline ) {
 		// error active
 		return true;
 	}

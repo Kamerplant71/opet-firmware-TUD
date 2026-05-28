@@ -44,7 +44,8 @@ C_SRCS +=  \
 ../MPPT_PCB_MCU__IO.c \
 ../MPPT_PCB_MCU__Main.c \
 ../MPPT_PCB_MCU__LOAD_CTR.c \
-../MPPT_PCB_MCU__Range.c
+../MPPT_PCB_MCU__Range.c \
+../MPPT_PCB_MCU__TEMP.c
 
 
 PREPROCESSING_SRCS += 
@@ -61,7 +62,8 @@ MPPT_PCB_MCU__EROM.o \
 MPPT_PCB_MCU__IO.o \
 MPPT_PCB_MCU__Main.o \
 MPPT_PCB_MCU__LOAD_CTR.o \
-MPPT_PCB_MCU__Range.o
+MPPT_PCB_MCU__Range.o \
+MPPT_PCB_MCU__TEMP.o
 
 OBJS_AS_ARGS +=  \
 MPPT_PCB_MCU__IV_Trans.o \
@@ -71,7 +73,8 @@ MPPT_PCB_MCU__EROM.o \
 MPPT_PCB_MCU__IO.o \
 MPPT_PCB_MCU__Main.o \
 MPPT_PCB_MCU__LOAD_CTR.o \
-MPPT_PCB_MCU__Range.o
+MPPT_PCB_MCU__Range.o \
+MPPT_PCB_MCU__TEMP.o
 
 C_DEPS +=  \
 MPPT_PCB_MCU__IV_Trans.d \
@@ -81,7 +84,8 @@ MPPT_PCB_MCU__EROM.d \
 MPPT_PCB_MCU__IO.d \
 MPPT_PCB_MCU__Main.d \
 MPPT_PCB_MCU__LOAD_CTR.d \
-MPPT_PCB_MCU__Range.d
+MPPT_PCB_MCU__Range.d \
+MPPT_PCB_MCU__TEMP.d
 
 C_DEPS_AS_ARGS +=  \
 MPPT_PCB_MCU__IV_Trans.d \
@@ -91,7 +95,8 @@ MPPT_PCB_MCU__EROM.d \
 MPPT_PCB_MCU__IO.d \
 MPPT_PCB_MCU__Main.d \
 MPPT_PCB_MCU__LOAD_CTR.d \
-MPPT_PCB_MCU__Range.d
+MPPT_PCB_MCU__Range.d \
+MPPT_PCB_MCU__TEMP.d
 
 OUTPUT_FILE_PATH +=MPPT_PCB_MCU.elf
 
@@ -157,6 +162,13 @@ LINKER_SCRIPT_DEP+=
 	
 
 ./MPPT_PCB_MCU__Range.o: .././MPPT_PCB_MCU__Range.c
+	@echo Building file: $<
+	@echo Invoking: AVR/GNU C Compiler : 5.4.0
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DNDEBUG  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\include"  -Os -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -Wall -mmcu=atmega1284 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\gcc\dev\atmega1284" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+./MPPT_PCB_MCU__TEMP.o: .././MPPT_PCB_MCU__TEMP.c
 	@echo Building file: $<
 	@echo Invoking: AVR/GNU C Compiler : 5.4.0
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avr8-gnu-toolchain\bin\avr-gcc.exe$(QUOTE)  -x c -funsigned-char -funsigned-bitfields -DNDEBUG  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\include"  -Os -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -mrelax -Wall -mmcu=atmega1284 -B "C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\gcc\dev\atmega1284" -c -std=gnu99 -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 

@@ -134,6 +134,7 @@ extern EEMEM float EROM_CAL_DAC_A1;
 //===========================================================================================
 // IC2 communication bus definitions
 #define START 0x08
+#define REPEATED_START 0x10
 #define MT_SLA_ACK 0x18
 #define MT_DATA_ACK 0x28
 #define MR_SLA_ACK 0x40
@@ -182,11 +183,8 @@ int32_t TEMP_MAX31865_Measure();
 void TEMP_MCP9600_Setup();
 float TEMP_MCP9600_Measure();
 
-// OLD
-/*
-int16_t ADC_Convert_AD7683();
-uint32_t ADC_Convert_Avr_AD7683();
-*/
+void TEMP_MAX31856_Setup();
+float TEMP_MAX31856_Measure();
 
 //end
 #endif /* MPPT_PCB_MCU__IO_H_ */

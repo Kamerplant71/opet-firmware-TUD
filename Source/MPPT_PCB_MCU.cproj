@@ -66,9 +66,9 @@
     </com_atmel_avrdbg_tool_simulator>
     <preserveEEPROM>false</preserveEEPROM>
     <ExternalProgrammingToolCommand />
-    <avrtoolserialnumber>J42700037264</avrtoolserialnumber>
+    <avrtoolserialnumber>J42700090184</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x1E9706</avrdeviceexpectedsignature>
-    <avrtoolinterfaceclock>1000000</avrtoolinterfaceclock>
+    <avrtoolinterfaceclock>125000</avrtoolinterfaceclock>
     <ResetRule>0</ResetRule>
     <EraseKey />
     <com_atmel_avrdbg_tool_jtagicemkii>
@@ -86,15 +86,26 @@
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
         <InterfaceProperties>
-          <IspClock>1000000</IspClock>
+          <IspClock>125000</IspClock>
           <JtagDbgClock>4000000</JtagDbgClock>
         </InterfaceProperties>
         <InterfaceName>ISP</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J42700037264</ToolNumber>
+      <ToolNumber>J42700090184</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
+    <custom>
+      <ToolOptions xmlns="">
+        <InterfaceProperties>
+        </InterfaceProperties>
+        <InterfaceName>ISP</InterfaceName>
+      </ToolOptions>
+      <ToolType xmlns="">custom</ToolType>
+      <ToolNumber xmlns="">
+      </ToolNumber>
+      <ToolName xmlns="">Custom Programming Tool</ToolName>
+    </custom>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -229,6 +240,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="MPPT_PCB_MCU__Range.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="MPPT_PCB_MCU__TEMP.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="MPPT_PCB_MCU__TEMP.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>

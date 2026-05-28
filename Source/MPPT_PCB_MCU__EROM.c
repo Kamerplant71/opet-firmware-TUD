@@ -22,6 +22,8 @@
 #include "MPPT_PCB_MCU__Range.h"
 #include "MPPT_PCB_MCU__PI_CTR.h"
 #include "MPPT_PCB_MCU__IV_Trans.h"
+#include "MPPT_PCB_MCU__TEMP.h"
+
 //===========================================================================================
 // GLOBAL VARIABLES and STRUCTURES
 
@@ -115,9 +117,10 @@ void EEPROM_LOAD_VAL_CONFIG() {
 		FAN_NTC2_T_On = EEPROM_READ_FLOAT(&EROM_FAN_NTC2_T_ON);
 		FAN_NTC2_T_Off = EEPROM_READ_FLOAT(&EROM_FAN_NTC2_T_OFF);
 		FAN_Power_On = EEPROM_READ_FLOAT(&EROM_FAN_Power_ON);
-		FAN_Power_Off = EEPROM_READ_FLOAT(&EROM_FAN_Power_OFF);
+		FAN_Power_Off = EEPROM_READ_FLOAT(&EROM_FAN_Power_OFF); 
 		FAN_Switch_Timer_Max = EEPROM_READ_UINT16(&EROM_FAN_Switch_Timer_Max);
-					
+		TEMP_MAX_Heat_dissipation =  EEPROM_READ_FLOAT(&EROM_TEMP_MAX_Heat_dissipation);
+		TEMP_Heat_dissipation_devices = EEPROM_READ_UINT8(&EROM_TEMP_Heat_dissipation_devices);
 	}
 	else { // load default data, eeprom empty
 		Copy_String(Sample_Name, "NoErom!");
@@ -195,7 +198,8 @@ void EEPROM_LOAD_VAL_CONFIG() {
 		FAN_Power_On = 10.0;
 		FAN_Power_Off = 5.0;
 		FAN_Switch_Timer_Max = 2400;
-		
+		TEMP_MAX_Heat_dissipation= 70.0;
+		TEMP_Heat_dissipation_devices = PCBconfig_TEMP_Heat_Monitoring_devices;
 	}
 
 	// Calculate new variables
@@ -1237,7 +1241,16 @@ void EEPROM_ACCESS_UART(char * EEPROM_Command, uint8_t EEPROM_Write){
 		COM_EROM_ACCESS_UINT16(&EROM_FAN_Switch_Timer_Max, EEPROM_Write, EEPROM_Val_Char, EEPROM_Command);
 		goto EEPROM_WRITE_EEROM_END;
 	}
-		
+	// WRITE float EROM_TEMP_MAX_Heat_dissipation
+	if (EEPROM_Adr == 183) {
+		COM_EROM_ACCESS_FLOAT(&EROM_TEMP_MAX_Heat_dissipation, EEPROM_Write, EEPROM_Val_Char, EEPROM_Command);
+		goto EEPROM_WRITE_EEROM_END;
+	}	
+	// WRITE uint_8 EROM_TEMP_Heat_dissipation_devices
+	if (EEPROM_Adr == 184) {
+		COM_EROM_ACCESS_UINT8(&EROM_TEMP_Heat_dissipation_devices, EEPROM_Write, EEPROM_Val_Char, EEPROM_Command);
+		goto EEPROM_WRITE_EEROM_END;
+	}			
 	AddEnd_String(EEPROM_Command, "?"); // return ? as error if not found
 
 	EEPROM_WRITE_EEROM_END:;

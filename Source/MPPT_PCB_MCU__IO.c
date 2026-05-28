@@ -14,7 +14,7 @@
 //===========================================================================================
 // INCLUDE Header
 
-#include "MPPT_PCB_MCU__main.h"
+#include "MPPT_PCB_MCU__Main.h"
 #include "MPPT_PCB_MCU__Com.h"
 #include "MPPT_PCB_MCU__IO.h"
 #include "MPPT_PCB_MCU__EROM.h"
@@ -22,7 +22,7 @@
 #include "MPPT_PCB_MCU__Range.h"
 #include "MPPT_PCB_MCU__PI_CTR.h"
 #include "MPPT_PCB_MCU__IV_Trans.h"
-
+#include "MPPT_PCB_MCU__TEMP.h"
 //===========================================================================================
 // GLOBAL VARIABLES and STRUCTURES
 
@@ -515,7 +515,9 @@ void TEMP_MAX31865_Setup(){
 	uint8_t ADC_SET;
 	
 	// init communication (set SPI interface)
-	SETBIT(SPCR,SPR0);	// clock fck/128
+	SETBIT(SPCR,SPR0);	
+	SETBIT(SPCR,SPR1);	// clock is now fck/128
+
 	SETBIT(SPCR, CPHA);  // rising edge output
 	//SETBIT(SPCR, CPOL); // normal high clock for PT100 ADC
 	CLR__EXP_DIO_1;  // enable chip select
@@ -548,9 +550,11 @@ int32_t TEMP_MAX31865_Measure(){
 	convert32to8 ADC_IN;
 	
 	// start up the SPI, set PT100 ADC mode
-	SETBIT(SPCR,SPR0);	// clock fck/128
+	SETBIT(SPCR,SPR0);
+	SETBIT(SPCR,SPR1);	// clock is now fck/128
+
 	SETBIT(SPCR, CPHA);  // rising edge output
-	//SETBIT(SPCR, CPOL); // normal high clock for PT100 ADC
+
 	CLR__EXP_DIO_1;	// enable chip select
 	
 	ADC_CFG = 0b00000001; // read, MSB
@@ -578,6 +582,136 @@ int32_t TEMP_MAX31865_Measure(){
 	return ADC_IN.i32; //Convert to 16bit value
 
 }
+
+
+//-------------------------------------------------------------------------------------------
+// Precision Thermocouple to digital converter Set-up (works for MAX31856)
+//SPCR = Control register
+//SPSR = Status register
+//SPDR = Data register
+void TEMP_MAX31856_Setup(){
+	uint8_t ADC_CFG; //Address
+	uint8_t ADC_SET; //Data
+	
+	// init communication (set SPI interface)
+	SETBIT(SPCR,SPR0);	
+	SETBIT(SPCR,SPR1);	// clock is now fck/128
+	SETBIT(SPCR, CPHA);  // rising edge output
+	
+	
+	// write configuration0
+ 	ADC_CFG = 0b10000000; // write, register config0
+	ADC_SET = 0b00000010; // no fault detection, clear faults
+	#ifdef Line_Freq_50 // adjust config byte if 50Hz line frequency
+		ADC_SET = ADC_SET + 1;
+	#endif /* Line_Freq_50 */
+
+	//Start communication
+	CLR__EXP_DIO_1;  // enable chip select
+ 	SPDR = ADC_CFG;
+ 	while(!(SPSR & BIT(SPIF))){ //Wait till register is sent
+ 	}
+ 	SPDR = ADC_SET;
+ 	while(!(SPSR & BIT(SPIF))){//Wait till data is sent
+ 	}
+	SET__EXP_DIO_1;  // disable chip select
+
+	
+	// write configuration1
+ 	ADC_CFG = 0b10000001; // write, register config0
+	ADC_SET = 0b01110111; // Average over 16 samples, T-type ADJUST FOR OWN TYPE TERMALCOUPLE
+	//Start communication
+	CLR__EXP_DIO_1;  // enable chip select
+ 	SPDR = ADC_CFG;
+ 	while(!(SPSR & BIT(SPIF))){ //Wait till register is sent
+ 	}
+ 	SPDR = ADC_SET;
+ 	while(!(SPSR & BIT(SPIF))){//Wait till data is sent
+ 	}
+	SET__EXP_DIO_1;  // disable chip select
+
+
+	// Enable auto conversion
+ 	ADC_CFG = 0b10000000; // write, register config0
+	ADC_SET = 0b10000000; // start autoconversion
+	#ifdef Line_Freq_50 // adjust config byte if 50Hz line frequency
+		ADC_SET = ADC_SET + 1;
+	#endif /* Line_Freq_50 */
+
+	//Start communication
+	CLR__EXP_DIO_1;  // enable chip select
+ 	SPDR = ADC_CFG;
+ 	while(!(SPSR & BIT(SPIF))){ //Wait till register is sent
+ 	}
+ 	SPDR = ADC_SET;
+ 	while(!(SPSR & BIT(SPIF))){//Wait till data is sent
+ 	}
+	SET__EXP_DIO_1;  // disable chip select
+
+
+	// finish communication to device (reset SPI settings)
+	CLRBIT(SPCR, CPHA);  // falling edge output main ADC
+	CLRBIT(SPCR,SPR1);	// clock fck/16
+}
+
+//Measurement for MAX31856, returns temperature in Celcius as float
+float TEMP_MAX31856_Measure(){
+	float Temperature;
+	uint8_t ADC_CFG;
+    uint8_t LTCBH;
+    uint8_t LTCBM;
+    uint8_t LTCBL;
+    int32_t raw;
+
+	// start up the SPI, 
+	SETBIT(SPCR,SPR0);
+	SETBIT(SPCR,SPR1);	// clock is now fck/128
+	SETBIT(SPCR, CPHA);  // rising edge output
+
+	
+	//Start reading bytes
+	ADC_CFG = 0x0C; // read, LTC_BH
+
+	CLR__EXP_DIO_1;	// enable chip select
+	SPDR = ADC_CFG;
+	while(!(SPSR & BIT(SPIF))){
+	}
+	SPDR = 0b11111111; //Send dummy byte
+	while(!(SPSR & BIT(SPIF))){
+	}
+	LTCBH = SPDR;
+	// read next byte 
+	SPDR = 0b11111111;
+	while(!(SPSR & BIT(SPIF))){
+	}
+	LTCBM = SPDR; //LTC_BM
+	// read next byte 
+	SPDR = 0b11111111;
+	while(!(SPSR & BIT(SPIF))){
+	}
+	LTCBL = SPDR; //LTC_BL	
+
+	// finish up SPI, put back to normal
+	SET__EXP_DIO_1;	// disable chip select
+	CLRBIT(SPCR, CPHA);  // falling edge output main ADC
+	//CLRBIT(SPCR, CPOL); // normal low clock for main ADC
+	CLRBIT(SPCR,SPR1);	// clock fck/16
+
+	//Convert to temperature
+	raw = ((int32_t)LTCBH << 16 ) | ((int32_t)LTCBM << 8 ) | LTCBL;
+	raw >>=5; //Remove 5 lowest bits, temperature is only 19 bits + 1 sign bit
+
+	//If signed
+	if (raw & 0x40000) {
+		raw |= 0xFFF80000; 
+	}
+
+	Temperature = raw * 0.0078125;
+	return Temperature;
+}
+
+
+
 
 //-------------------------------------------------------------------------------------------
 // TC ADC Set-up (works for MCP9600 TC ADC)
@@ -707,7 +841,7 @@ void DIOExp_config_init(){
 	This function initializes the Digital IO expander on the board via IC2 bus.
 	*/
 	
-	// Set-up IC2 data transfer frequency (~132kHz at 20Mhz)
+	// Set-up IC2 data transfer frequency (~132kHz at 20Mhz) or 111kHz at 16Mhz
 	TWBR = 64; // frequency scaler
 	CLRBIT(TWSR, TWPS1); // pre-scaler
 	CLRBIT(TWSR, TWPS0); // pre-scaler
