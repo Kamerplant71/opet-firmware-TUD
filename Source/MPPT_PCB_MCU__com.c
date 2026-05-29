@@ -1144,10 +1144,11 @@ void UART_Execute_Command(char *Address, char *Value){
 	
 		#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
 			for (uint8_t i =0; i<8; i++){
-				FloatToString(Value, AI_HEAT_NTC_Temp[i]);
+				FloatToString(Value, AI_HEAT_NTC_Temp[i]); //Send each temp
 				COM_Add_To_OutSTR_with_Sep(Value);			
 			}
-
+			itoa(AI_HEAT_ADC_PRESENT_MASK, Value, 10); //Send active mask
+			COM_Add_To_OutSTR_with_Sep(Value);
 		#endif
 
 		UART_WriteString (&OutSTR[0]);

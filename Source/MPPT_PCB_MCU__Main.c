@@ -241,8 +241,14 @@ int main(void)
 					
 					//Set temp flag if temperature is too high
 					uint8_t temp_flag =0;
-					for (uint8_t i =0; i<8; i++){
-						if(AI_HEAT_NTC_Temp[i] >=TEMP_MAX_Heat_dissipation){
+					for (uint8_t i = 0; i < 8; i++) {
+					
+						if (!(AI_HEAT_ADC_PRESENT_MASK & (1 << i))) { // If not present skip 
+							continue;
+						}
+						
+						//If temperature is higher then expected or below -10.0 degrees set flag 
+						if (AI_HEAT_NTC_Temp[i] >= TEMP_MAX_Heat_dissipation | AI_HEAT_NTC_Temp[i] <= -10.0) {
 							temp_flag = 1;
 						}
 					}
@@ -256,8 +262,11 @@ int main(void)
 
 					//Check number of valid readings
 					uint8_t number_active_devices = 0;
+
 					for (uint8_t i =0; i<8; i++){
-						number_active_devices +=  AI_HEAT_ADC_MASK[i]; 
+						if (AI_HEAT_ADC_PRESENT_MASK & (1<<i)){
+						number_active_devices += 1; 
+						}
 					}
 
 					if(number_active_devices < TEMP_Heat_dissipation_devices ){ // If less devices then expected, gice error
