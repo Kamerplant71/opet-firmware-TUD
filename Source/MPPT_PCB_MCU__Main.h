@@ -428,8 +428,9 @@ extern volatile uint8_t Temp_Sensor_Type;
 extern volatile uint8_t EEMEM_Written;
 extern volatile uint8_t Timer_Control_Match;
 extern volatile uint8_t Timer_Temp_Meas_Match;
-extern volatile float TEMP_MAX_Heat_dissipation;  
+extern volatile float TEMP_MAX_Heat_NTC;  
 extern volatile uint8_t TEMP_Heat_dissipation_devices;
+extern volatile uint8_t TEMP_i_Device;
 
 
 //===========================================================================================
@@ -440,7 +441,7 @@ extern EEMEM uint8_t EROM_Timer_Temp_Meas_Match;
 extern EEMEM uint8_t EROM_SysConfig;
 extern EEMEM uint8_t EROM_SysControl;
 extern EEMEM uint8_t EROM_Temp_Sensor_Type;
-extern EEMEM float EROM_TEMP_MAX_Heat_dissipation; 
+extern EEMEM float EROM_TEMP_MAX_Heat_NTC; 
 extern EEMEM uint8_t EROM_TEMP_Heat_dissipation_devices;
 
 //===========================================================================================

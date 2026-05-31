@@ -8,7 +8,7 @@
 	-----------------------------------------
 	ATMega 1284 Micro controller support
 	-----------------------------------------
-	      Communication Header FILE
+	Temperature monitoring Header FILE
 	=========================================
 */
 
@@ -20,7 +20,7 @@
 
 #define BASE_ADDRESS_ADC121C021 0x50  // 101 0000
 
-#define I2C_TIMEOUT_COUNT 1000
+#define I2C_TIMEOUT_COUNT 10000
 
 
 //Registers
@@ -39,8 +39,8 @@
 // VARIABLES and STRUCTURES
 
 extern volatile float AI_HEAT_NTC_Temp[8];
-extern volatile uint8_t AI_HEAT_ADC_PRESENT_MASK;
-extern volatile float TEMP_MAX_Heat_dissipation;
+extern volatile uint8_t AI_HEAT_ADC_Present_Mask;
+extern volatile uint8_t AI_HEAT_ADC_Fault_Mask;
 
 //===========================================================================================
 // EXTERN EEPROM VARIABLES
@@ -49,18 +49,18 @@ extern volatile float TEMP_MAX_Heat_dissipation;
 //===========================================================================================
 // FUNCTION Prototypes
 
-void Temp_monitoring_Setup();
-void Read_Temp_All_ADC121C021();
+void Temp_monitoring_Setup(void);
+void Read_Temp_ADC121C021(uint8_t TEMP_i_Device);
 
 void ADC121C021_Setup(uint8_t address);
 uint8_t ADC121C021_ReadRaw(uint8_t i, uint16_t *raw_out);
-void ADC121C021_SetConfig(uint8_t address);
+void ADC121C021_Set_Config(uint8_t address);
 void ADC121C021_Set_Vlow(uint8_t address);
 void ADC121C021_Set_Vhyst(uint8_t address);
 float NTC_RawToTemp(uint16_t raw);
 uint16_t NTC_TempToRaw(float temp_c);
-uint8_t ADC121C021_IsPresent(uint8_t address);
-uint8_t I2C_Wait_TWINT();
+uint8_t ADC121C021_Is_Present(uint8_t address);
+uint8_t I2C_Wait_TWINT(void);
 
 //end
-#endif /* MPPT_PCB_MCU__Com_H_ */
+#endif /* MPPT_PCB_MCU__TEMP_H_ */

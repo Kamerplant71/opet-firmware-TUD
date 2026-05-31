@@ -41,8 +41,9 @@ volatile uint8_t Timer_Control_Counter;
 volatile uint16_t Timer_Temp_Meas_Counter;
 volatile uint8_t Timer_Control_Match;
 volatile uint8_t Timer_Temp_Meas_Match;
-volatile float TEMP_MAX_Heat_dissipation;  
+volatile float TEMP_MAX_Heat_NTC;  
 volatile uint8_t TEMP_Heat_dissipation_devices;
+volatile uint8_t TEMP_i_Device;
 
 //Convert 16to8 bit integer
 typedef union {
@@ -61,7 +62,7 @@ EEMEM uint8_t EROM_Timer_Temp_Meas_Match = TEMP_MEAS_TIMER_MUILT;
 EEMEM uint8_t EROM_SysConfig = (PCBconfig_TEMP_is_enabled); // see board config definitions section in Main.h
 EEMEM uint8_t EROM_SysControl = 0; // autostart EROM system control
 EEMEM uint8_t EROM_Temp_Sensor_Type = PCBconfig_TEMP_Sensor_Type; // see board config definitions section in Main.h
-EEMEM float EROM_TEMP_MAX_Heat_dissipation = 70.0; // X degree or higher of the heat dissipation device and output should turn off 
+EEMEM float EROM_TEMP_MAX_Heat_NTC = 70.0; // X degree or higher of the heat dissipation device and output should turn off 
 EEMEM uint8_t EROM_TEMP_Heat_dissipation_devices = PCBconfig_TEMP_Heat_Monitoring_devices; // Number of active dissipation devices
 
 
@@ -173,6 +174,7 @@ int main(void)
 	//Setup heat dissipation temperature sensors
 	#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
 		Temp_monitoring_Setup();
+		TEMP_i_Device = 0;
 	#endif
 
 	Set_DAC_Output_RAW(65535);	// Reset DAC to max voltage (low current VOC)
@@ -237,19 +239,24 @@ int main(void)
 
 				//Measure temp heat dissipation device 
 				#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
-					Read_Temp_All_ADC121C021();
+					Read_Temp_ADC121C021(TEMP_i_Device); //Only check one device per interrupt
 					
 					//Set temp flag if temperature is too high
 					uint8_t temp_flag =0;
 					for (uint8_t i = 0; i < 8; i++) {
 					
-						if (!(AI_HEAT_ADC_PRESENT_MASK & (1 << i))) { // If not present skip 
+						if (!(AI_HEAT_ADC_Present_Mask & (1 << i))) { // If not present skip 
 							continue;
 						}
 						
-						//If temperature is higher then expected or below -10.0 degrees set flag 
-						if (AI_HEAT_NTC_Temp[i] >= TEMP_MAX_Heat_dissipation | AI_HEAT_NTC_Temp[i] <= -10.0) {
+						//If temperature is higher then expected  
+						if (AI_HEAT_NTC_Temp[i] >= TEMP_MAX_Heat_NTC) {
 							temp_flag = 1;
+						}
+
+						//If temperature is below -10.0 degrees set offline as probably something is wrong 
+						if (AI_HEAT_NTC_Temp[i] <= -10.0) {
+							AI_HEAT_ADC_Fault_Mask |= (1 << i);
 						}
 					}
 
@@ -260,21 +267,28 @@ int main(void)
 						CLR__Status_HEAT_NTC_Over_Temp;
 					}
 
-					//Check number of valid readings
 					uint8_t number_active_devices = 0;
 
+					// Check if number of active devices is equal to the expected amount of devices
 					for (uint8_t i =0; i<8; i++){
-						if (AI_HEAT_ADC_PRESENT_MASK & (1<<i)){
+						if (AI_HEAT_ADC_Present_Mask & (1<<i)){
 						number_active_devices += 1; 
 						}
 					}
 
-					if(number_active_devices < TEMP_Heat_dissipation_devices ){ // If less devices then expected, gice error
+					// If less devices then expected or ADC fault, give error
+					if(number_active_devices < TEMP_Heat_dissipation_devices || AI_HEAT_ADC_Fault_Mask != 0 ){ 
 						SET__Status_HEAT_NTC_offline;
 					}
 					else{
 						CLR__Status_HEAT_NTC_offline;	
 					}
+
+					// Update the device for next iteration
+					TEMP_i_Device++;
+					if(TEMP_i_Device >= 8){
+						TEMP_i_Device = 0;
+					} 
 				#endif
 
 				// reset RTD Cal flag

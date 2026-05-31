@@ -1147,8 +1147,10 @@ void UART_Execute_Command(char *Address, char *Value){
 				FloatToString(Value, AI_HEAT_NTC_Temp[i]); //Send each temp
 				COM_Add_To_OutSTR_with_Sep(Value);			
 			}
-			itoa(AI_HEAT_ADC_PRESENT_MASK, Value, 10); //Send active mask
+			itoa(AI_HEAT_ADC_Present_Mask, Value, 10); //Send active mask
 			COM_Add_To_OutSTR_with_Sep(Value);
+			itoa(AI_HEAT_ADC_Fault_Mask, Value, 10); //Send fault mask
+			COM_Add_To_OutSTR_with_Sep(Value);			
 		#endif
 
 		UART_WriteString (&OutSTR[0]);

@@ -8,7 +8,7 @@
 	-----------------------------------------
 	ATMega 1284 Micro controller support
 	-----------------------------------------
-	  Communication function C-Code FILE
+	Temperature monitoring C-Code FILE
 	=========================================
 */
 //===========================================================================================
@@ -28,8 +28,8 @@
 // VARIABLES and STRUCTURES
 
 volatile float AI_HEAT_NTC_Temp[8];
-volatile uint8_t AI_HEAT_ADC_PRESENT_MASK;
-volatile float TEMP_MAX_Heat_dissipation;
+volatile uint8_t AI_HEAT_ADC_Present_Mask;
+volatile uint8_t AI_HEAT_ADC_Fault_Mask;
 
 
 //===========================================================================================
@@ -41,41 +41,40 @@ volatile float TEMP_MAX_Heat_dissipation;
 //-------------------------------------------------------------------------------------------
 
 // Try to setup all adc's
-void Temp_monitoring_Setup(){
-    AI_HEAT_ADC_PRESENT_MASK = 0;
+void Temp_monitoring_Setup(void) {
+
+    AI_HEAT_ADC_Present_Mask = 0;
+	AI_HEAT_ADC_Fault_Mask = 0;
 
     for (uint8_t i = 0; i < 8; i++) {
-
-        if (ADC121C021_IsPresent(BASE_ADDRESS_ADC121C021 + i)) {
-
-            AI_HEAT_ADC_PRESENT_MASK |= (1 << i);
-
+        if (ADC121C021_Is_Present(BASE_ADDRESS_ADC121C021 + i)) {
+            AI_HEAT_ADC_Present_Mask |= (1 << i);
             ADC121C021_Setup(BASE_ADDRESS_ADC121C021 + i);
         }
+		
+		AI_HEAT_NTC_Temp[i] = -9.9;
+		
     }
 }
 
 
 // Read temperature of all ADC's
-void Read_Temp_All_ADC121C021(){
+void Read_Temp_ADC121C021(uint8_t i){
 
 	uint16_t raw;
-    for (uint8_t i = 0; i < 8; i++) {
 
-        if (!(AI_HEAT_ADC_PRESENT_MASK & (1 << i))) {
-            continue;
-        }
+	if (!(AI_HEAT_ADC_Present_Mask & (1 << i))){ //Check if ith device is present
+		return;
+	}
 
-        if (ADC121C021_ReadRaw(i, &raw)) {
-            AI_HEAT_NTC_Temp[i] = NTC_RawToTemp(raw);
-        }
-        else {
-            AI_HEAT_ADC_PRESENT_MASK &= ~(1 << i);
-        }
+    if (ADC121C021_ReadRaw(i, &raw)) {
+        AI_HEAT_NTC_Temp[i] = NTC_RawToTemp(raw);
+		AI_HEAT_ADC_Fault_Mask &= ~(1 << i);
+    }
+    else {
+        AI_HEAT_ADC_Fault_Mask |= (1 << i); //Set fault bit if communication fails
     }
 }
-
-
 
 
 
@@ -83,7 +82,7 @@ void Read_Temp_All_ADC121C021(){
 // I2C clock already configured in DIOExp_config_init as 111kHz
 void ADC121C021_Setup(uint8_t address){
 
-	ADC121C021_SetConfig(address);
+	ADC121C021_Set_Config(address);
 	ADC121C021_Set_Vlow(address);
 	ADC121C021_Set_Vhyst(address);
 
@@ -155,7 +154,7 @@ ADC121C021_ReadRaw_Error:
     return 0;
 }
 
-void ADC121C021_SetConfig(uint8_t address){
+void ADC121C021_Set_Config(uint8_t address){
 	// Set configuration register
 	// Send start condition
 	TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
@@ -165,7 +164,7 @@ void ADC121C021_SetConfig(uint8_t address){
 
 
 	// send address
-	TWDR = (address<<1); // Write address
+	TWDR = (address << 1); // Write address
 	TWCR = (1<<TWINT)|(1<<TWEN); // Start transmission address
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Config_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_SLA_ACK) goto ADC121C021_Setup_Config_Sent_Stop; // Check correct status
@@ -173,21 +172,21 @@ void ADC121C021_SetConfig(uint8_t address){
 
 	// send register
 	TWDR = ADC121C021_REG_CONFIG;
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Config_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Config_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send data
 	TWDR = 0b11100010; // 0.4ksps auto conversion, Alert self clear,Enable alert ,Alert active low
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Config_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Config_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send stop
 	ADC121C021_Setup_Config_Sent_Stop:
-	TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO);
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
 	_delay_us(IC2_COM_DELAY_us);
 }
 
@@ -196,52 +195,52 @@ void ADC121C021_Set_Vlow(uint8_t address){
 	uint8_t msb;
 	uint8_t lsb;
 	uint16_t Vlow;
-	// Calculate Vhigh threshold
-	Vlow = NTC_TempToRaw(TEMP_MAX_Heat_dissipation);
+	// Calculate Vlow threshold
+	Vlow = NTC_TempToRaw(TEMP_MAX_Heat_NTC);
 	Vlow &= 0x0FFF;
 
 	lsb = (uint8_t) (Vlow & 0xFF);
-	msb = (uint8_t) (Vlow>>8);
+	msb = (uint8_t) (Vlow >> 8);
 
 
 	// Set V_low
 	// Send start condition
-	TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vlow_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != START) goto ADC121C021_Setup_Vlow_Sent_Stop; //Check correct status
 	_delay_us(IC2_COM_DELAY_us);
 
 	//send address
-	TWDR = (address<<1); //Write address
-	TWCR = (1<<TWINT)|(1<<TWEN); //Start transmission address
+	TWDR = (address << 1); //Write address
+	TWCR = (1 << TWINT) | (1 << TWEN); //Start transmission address
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vlow_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_SLA_ACK) goto ADC121C021_Setup_Vlow_Sent_Stop; //Check correct status
 	_delay_us(IC2_COM_DELAY_us);
 
 	//send register
 	TWDR = ADC121C021_REG_V_LOW;
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vlow_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Vlow_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send high byte
 	TWDR = msb;  
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vlow_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Vlow_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send low byte
 	TWDR = lsb; 
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vlow_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Vlow_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send stop
 	ADC121C021_Setup_Vlow_Sent_Stop:
-	TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO);
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
 	_delay_us(IC2_COM_DELAY_us);
 }
 
@@ -249,59 +248,58 @@ void ADC121C021_Set_Vlow(uint8_t address){
 //Where X is the value stored at the hysteresis register
 void ADC121C021_Set_Vhyst(uint8_t address){
 	// Calculate V Hysteresis
-	// Hysteresis is calculated based on 5% below the upper temperature limit
+	// Hysteresis is calculated based on 5 degrees below the upper temperature limit
 	float temp_hyst; // Temperature where the alert should be turned off
 	uint8_t msb;
 	uint8_t lsb;
 	uint16_t Vhyst;	
 	
-	
-	temp_hyst = TEMP_MAX_Heat_dissipation - TEMP_MAX_Heat_dissipation * 0.05;
-	Vhyst = NTC_TempToRaw(temp_hyst);
+	temp_hyst = TEMP_MAX_Heat_NTC - 5.0; // Take 5degrees below max temperature 
+	Vhyst = NTC_TempToRaw(temp_hyst) - NTC_TempToRaw(TEMP_MAX_Heat_NTC);
 	Vhyst &= 0x0FFF;
 
 	lsb = (uint8_t) (Vhyst & 0xFF);
-	msb = (uint8_t) (Vhyst>>8);
+	msb = (uint8_t) (Vhyst >> 8);
 
 
 	//Set V_hyst
 	//Send start condition
-	TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vhyst_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != START) goto ADC121C021_Setup_Vhyst_Sent_Stop; //Check correct status
 	_delay_us(IC2_COM_DELAY_us);
 
 	//send address
-	TWDR = (address<<1) ; //Write address
-	TWCR = (1<<TWINT)|(1<<TWEN); //Start transmission address
+	TWDR = (address << 1) ; //Write address
+	TWCR = (1 << TWINT) | (1 << TWEN); //Start transmission address
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vhyst_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_SLA_ACK) goto ADC121C021_Setup_Vhyst_Sent_Stop; //Check correct status
 	_delay_us(IC2_COM_DELAY_us);
 
 	//send register
 	TWDR = ADC121C021_REG_V_HYST;
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vhyst_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Vhyst_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send high byte
 	TWDR = msb; 
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vhyst_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Vhyst_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send low byte
 	TWDR = lsb; 
-	TWCR = (1<<TWINT)|(1<<TWEN);
+	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Vhyst_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Vhyst_Sent_Stop;
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send stop
 	ADC121C021_Setup_Vhyst_Sent_Stop:
-	TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO);
+	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
 	_delay_us(IC2_COM_DELAY_us);
 }
 
@@ -354,7 +352,7 @@ uint16_t NTC_TempToRaw(float temp_c){
 
 
 //Helper to handle I2C communication and give a timeout if it takes too long
-uint8_t I2C_Wait_TWINT(){
+uint8_t I2C_Wait_TWINT(void){
     uint16_t timeout = I2C_TIMEOUT_COUNT;
 
     while (!(TWCR & (1 << TWINT))) {
@@ -366,7 +364,7 @@ uint8_t I2C_Wait_TWINT(){
     return 1;
 }
 
-uint8_t ADC121C021_IsPresent(uint8_t address){
+uint8_t ADC121C021_Is_Present(uint8_t address){
     // Send start
     TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
     if (!I2C_Wait_TWINT()) goto ADC121C021_IsPresent_Error;
