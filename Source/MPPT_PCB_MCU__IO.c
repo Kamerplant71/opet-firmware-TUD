@@ -618,7 +618,7 @@ void TEMP_MAX31856_Setup(){
 
 	
 	// write configuration1
- 	ADC_CFG = 0b10000001; // write, register config0
+ 	ADC_CFG = 0b10000001; // write, register config1
 	ADC_SET = 0b01110111; // Average over 16 samples, T-type ADJUST FOR OWN TYPE TERMALCOUPLE
 	//Start communication
 	CLR__EXP_DIO_1;  // enable chip select
@@ -699,7 +699,7 @@ float TEMP_MAX31856_Measure(){
 
 	//Convert to temperature
 	raw = ((int32_t)LTCBH << 16 ) | ((int32_t)LTCBM << 8 ) | LTCBL;
-	raw >>=5; //Remove 5 lowest bits, temperature is only 19 bits + 1 sign bit
+	raw >>=5; //Remove 5 lowest bits, temperature is only 19 bits including 1 sign bit
 
 	//If signed
 	if (raw & 0x40000) {
