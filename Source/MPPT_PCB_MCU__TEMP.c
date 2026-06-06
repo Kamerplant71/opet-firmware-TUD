@@ -27,6 +27,8 @@
 //===========================================================================================
 // VARIABLES and STRUCTURES
 
+const uint8_t ADDRESSES_ADC121C021[8] = {0x50, 0x51, 0x52, 0x54, 0x55, 0x56, 0x58, 0x59};
+
 volatile float AI_HEAT_NTC_Temp[8];
 volatile uint8_t AI_HEAT_ADC_Present_Mask;
 volatile uint8_t AI_HEAT_ADC_Fault_Mask;
@@ -41,15 +43,15 @@ volatile uint8_t AI_HEAT_ADC_Fault_Mask;
 //-------------------------------------------------------------------------------------------
 
 // Try to setup all adc's
-void Temp_monitoring_Setup(void) {
+void Temp_monitoring_Setup() {
 
     AI_HEAT_ADC_Present_Mask = 0;
 	AI_HEAT_ADC_Fault_Mask = 0;
 
     for (uint8_t i = 0; i < 8; i++) {
-        if (ADC121C021_Is_Present(BASE_ADDRESS_ADC121C021 + i)) {
+        if (ADC121C021_Is_Present(ADDRESSES_ADC121C021[i])) {
             AI_HEAT_ADC_Present_Mask |= (1 << i);
-            ADC121C021_Setup(BASE_ADDRESS_ADC121C021 + i);
+            ADC121C021_Setup(ADDRESSES_ADC121C021[i]);
         }
 		
 		AI_HEAT_NTC_Temp[i] = -9.9;
@@ -91,7 +93,7 @@ void ADC121C021_Setup(uint8_t address){
 
 // Reads the 12 bit result of ADC and gives an success rate as output
 uint8_t ADC121C021_ReadRaw(uint8_t i, uint16_t *raw_out){
-    uint8_t address = BASE_ADDRESS_ADC121C021 + i;
+    uint8_t address = ADDRESSES_ADC121C021[i];
 
     uint8_t msb = 0;
     uint8_t lsb = 0;
@@ -352,7 +354,7 @@ uint16_t NTC_TempToRaw(float temp_c){
 
 
 //Helper to handle I2C communication and give a timeout if it takes too long
-uint8_t I2C_Wait_TWINT(void){
+uint8_t I2C_Wait_TWINT(){
     uint16_t timeout = I2C_TIMEOUT_COUNT;
 
     while (!(TWCR & (1 << TWINT))) {

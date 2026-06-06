@@ -43,7 +43,6 @@ volatile uint8_t Timer_Control_Match;
 volatile uint8_t Timer_Temp_Meas_Match;
 volatile float TEMP_MAX_Heat_NTC;  
 volatile uint8_t TEMP_Heat_dissipation_devices;
-volatile uint8_t TEMP_i_Device;
 
 //Convert 16to8 bit integer
 typedef union {
@@ -174,7 +173,6 @@ int main(void)
 	//Setup heat dissipation temperature sensors
 	#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
 		Temp_monitoring_Setup();
-		TEMP_i_Device = 0;
 	#endif
 
 	Set_DAC_Output_RAW(65535);	// Reset DAC to max voltage (low current VOC)
@@ -237,36 +235,57 @@ int main(void)
 					}
 				}
 
-				//Measure temp heat dissipation device 
+				// Measure temp heat dissipation device 
 				#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
-					Read_Temp_ADC121C021(TEMP_i_Device); //Only check one device per interrupt
 					
-					//Set temp flag if temperature is too high
+					// Set temp flag if temperature is too high
 					uint8_t temp_flag =0;
-					for (uint8_t i = 0; i < 8; i++) {
 					
-						if (!(AI_HEAT_ADC_Present_Mask & (1 << i))) { // If not present skip 
+					for (uint8_t i = 0; i < 8; i++) {
+
+						// If not present skip
+						if (!(AI_HEAT_ADC_Present_Mask & (1 << i))) {  
 							continue;
 						}
-						
-						//If temperature is higher then expected  
-						if (AI_HEAT_NTC_Temp[i] >= TEMP_MAX_Heat_NTC) {
-							temp_flag = 1;
+
+						// Read temperature
+						Read_Temp_ADC121C021(i);
+
+						// If over temp is active check a lower limit to avoid rapid on/off
+						if(is_Status_HEAT_NTC_Over_Temp){
+							if (AI_HEAT_NTC_Temp[i] >= (TEMP_MAX_Heat_NTC -5.0) ) {
+								temp_flag = 1;
+							}							
+						}
+						else{
+							if (AI_HEAT_NTC_Temp[i] >= TEMP_MAX_Heat_NTC) {
+								temp_flag = 1;
+							}
 						}
 
-						//If temperature is below -10.0 degrees set offline as probably something is wrong 
+						// If temperature is below -10.0 degrees set offline as probably something is wrong 
 						if (AI_HEAT_NTC_Temp[i] <= -10.0) {
 							AI_HEAT_ADC_Fault_Mask |= (1 << i);
 						}
 					}
 
-					if(temp_flag || is_ADC121C021_ALERT_Active){
+					if(temp_flag){
 						SET__Status_HEAT_NTC_Over_Temp;
-					}
+					}					
 					else{
 						CLR__Status_HEAT_NTC_Over_Temp;
 					}
 
+
+					// Check alert pin
+					if (is_ADC121C021_ALERT_Active){
+						SET__Status_HEAT_Alert;
+					}
+					else{
+						CLR__Status_HEAT_NTC_Alert;
+					}
+
+					// Check offline devices
 					uint8_t number_active_devices = 0;
 
 					// Check if number of active devices is equal to the expected amount of devices
@@ -284,11 +303,7 @@ int main(void)
 						CLR__Status_HEAT_NTC_offline;	
 					}
 
-					// Update the device for next iteration
-					TEMP_i_Device++;
-					if(TEMP_i_Device >= 8){
-						TEMP_i_Device = 0;
-					} 
+
 				#endif
 
 				// reset RTD Cal flag

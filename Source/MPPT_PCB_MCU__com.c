@@ -1131,6 +1131,10 @@ void UART_Execute_Command(char *Address, char *Value){
 		}		
 	}
 
+	// END: EEPROM Commands
+	//##############################
+
+	// All available temperature inforamtion 
 	COM_Copy_To_OutSTR_From_Start("TEMP?");
 	if (COM_Compare_to_OutStr(Address)) {
 		FloatToString(Value, AI_NTC_Temp_1);
@@ -1162,8 +1166,6 @@ void UART_Execute_Command(char *Address, char *Value){
 
 
 
-	// END: EEPROM Commands
-	//##############################
 	
 	// -----------------------------	
 	// Com error point

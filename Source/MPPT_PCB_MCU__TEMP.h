@@ -18,7 +18,6 @@
 //===========================================================================================
 // Definitions and constants
 
-#define BASE_ADDRESS_ADC121C021 0x50  // 101 0000
 
 #define I2C_TIMEOUT_COUNT 10000
 
@@ -38,6 +37,8 @@
 //===========================================================================================
 // VARIABLES and STRUCTURES
 
+extern const uint8_t ADDRESSES_ADC121C021[8];
+
 extern volatile float AI_HEAT_NTC_Temp[8];
 extern volatile uint8_t AI_HEAT_ADC_Present_Mask;
 extern volatile uint8_t AI_HEAT_ADC_Fault_Mask;
@@ -50,7 +51,7 @@ extern volatile uint8_t AI_HEAT_ADC_Fault_Mask;
 // FUNCTION Prototypes
 
 void Temp_monitoring_Setup(void);
-void Read_Temp_ADC121C021(uint8_t TEMP_i_Device);
+void Read_Temp_ADC121C021(uint8_t i);
 
 void ADC121C021_Setup(uint8_t address);
 uint8_t ADC121C021_ReadRaw(uint8_t i, uint16_t *raw_out);

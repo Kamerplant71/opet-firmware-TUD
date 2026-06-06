@@ -50,7 +50,7 @@
 
 #define PCBconfig_TEMP_Heat_Monitoring_enabled // use <PCBconfig_TEMP_Heat_Monitoring_enabled> when using the modular heat dissipation device otherwise <PCBconfig_TEMP_Heat_Monitoring_enabled>
 
-#define PCBconfig_TEMP_Heat_Monitoring_devices 1 // Number of heat dissipation devices   
+#define PCBconfig_TEMP_Heat_Monitoring_devices 1 // Number of heat dissipation devices, set to 0 if none   
 
 
 #define Line_Freq_50		//use <Line_Freq_60> for 60Hz line frequency and <Line_Freq_50> for 50Hz
@@ -70,7 +70,7 @@
 #endif /* Line_Freq_50 */
 
 #define DeviceName "OPET_R1.4C"
-#define FirmwareVersion "V1.16A-D08M03Y72"
+#define FirmwareVersion "V1.16A-D08M03Y73"
 
 //===========================================================================================
 // INCLUDE Libraries
@@ -333,11 +333,14 @@
 				#define SET__Status_HEAT_NTC_Over_Temp (SETBIT(SysStatus_B, 4))
 				#define CLR__Status_HEAT_NTC_Over_Temp (CLRBIT(SysStatus_B, 4))
 				#define is_Status_HEAT_NTC_Over_Temp (SysStatus_B & BIT(4))
-//		Bit5:	Heat dissipation device offline
-				#define SET__Status_HEAT_NTC_offline (SETBIT(SysStatus_B, 5))
-				#define CLR__Status_HEAT_NTC_offline (CLRBIT(SysStatus_B, 5))
-				#define is_Status_HEAT_NTC_offline (SysStatus_B & BIT(5))
-//		Bit6:	none
+//		Bit5:	Heat dissipation device alert pin active
+				#define SET__Status_HEAT_Alert (SETBIT(SysStatus_B, 5))
+				#define CLR__Status_HEAT_NTC_Alert (CLRBIT(SysStatus_B, 5))
+				#define is_Status_HEAT_Alert (SysStatus_B & BIT(5))
+//		Bit6:	Heat dissipation device offline
+				#define SET__Status_HEAT_NTC_offline (SETBIT(SysStatus_B, 6))
+				#define CLR__Status_HEAT_NTC_offline (CLRBIT(SysStatus_B, 6))
+				#define is_Status_HEAT_NTC_offline (SysStatus_B & BIT(6))
 //		Bit7:	none
 	
 //----------------------------------------
@@ -430,7 +433,6 @@ extern volatile uint8_t Timer_Control_Match;
 extern volatile uint8_t Timer_Temp_Meas_Match;
 extern volatile float TEMP_MAX_Heat_NTC;  
 extern volatile uint8_t TEMP_Heat_dissipation_devices;
-extern volatile uint8_t TEMP_i_Device;
 
 
 //===========================================================================================
