@@ -334,9 +334,9 @@
 				#define CLR__Status_HEAT_NTC_Over_Temp (CLRBIT(SysStatus_B, 4))
 				#define is_Status_HEAT_NTC_Over_Temp (SysStatus_B & BIT(4))
 //		Bit5:	Heat dissipation device alert pin active
-				#define SET__Status_HEAT_Alert (SETBIT(SysStatus_B, 5))
+				#define SET__Status_HEAT_NTC_Alert (SETBIT(SysStatus_B, 5))
 				#define CLR__Status_HEAT_NTC_Alert (CLRBIT(SysStatus_B, 5))
-				#define is_Status_HEAT_Alert (SysStatus_B & BIT(5))
+				#define is_Status_HEAT_NTC_Alert (SysStatus_B & BIT(5))
 //		Bit6:	Heat dissipation device offline
 				#define SET__Status_HEAT_NTC_offline (SETBIT(SysStatus_B, 6))
 				#define CLR__Status_HEAT_NTC_offline (CLRBIT(SysStatus_B, 6))

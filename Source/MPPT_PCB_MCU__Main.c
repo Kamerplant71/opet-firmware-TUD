@@ -279,7 +279,7 @@ int main(void)
 
 					// Check alert pin
 					if (is_ADC121C021_ALERT_Active){
-						SET__Status_HEAT_Alert;
+						SET__Status_HEAT_NTC_Alert;
 					}
 					else{
 						CLR__Status_HEAT_NTC_Alert;
