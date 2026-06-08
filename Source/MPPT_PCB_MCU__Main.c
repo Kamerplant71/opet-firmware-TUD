@@ -58,7 +58,9 @@ typedef union {
 EEMEM uint16_t EROM_Loop_Timer_1_Comp_Match = TIMER_1_COMP_MATCH;
 EEMEM uint8_t EROM_Timer_Control_Match = CONTROL_TIMER_MULT;
 EEMEM uint8_t EROM_Timer_Temp_Meas_Match = TEMP_MEAS_TIMER_MUILT;
-EEMEM uint8_t EROM_SysConfig = (PCBconfig_TEMP_is_enabled); // see board config definitions section in Main.h
+EEMEM uint8_t EROM_SysConfig =
+    (PCBconfig_TEMP_is_enabled ? BIT(0) : 0) |
+    (PCBconfig_TEMP_Heat_Monitoring_enabled ? BIT(2) : 0); // see board config definitions section in Main.h
 EEMEM uint8_t EROM_SysControl = 0; // autostart EROM system control
 EEMEM uint8_t EROM_Temp_Sensor_Type = PCBconfig_TEMP_Sensor_Type; // see board config definitions section in Main.h
 EEMEM float EROM_TEMP_MAX_Heat_NTC = 70.0; // X degree or higher of the heat dissipation device and output should turn off 
@@ -171,9 +173,9 @@ int main(void)
 	}
 
 	//Setup heat dissipation temperature sensors
-	#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
-		Temp_monitoring_Setup();
-	#endif
+		if (is_SysConfig_TEMP_Heat_Monitoring_On){
+			Temp_monitoring_Setup();
+		}
 
 	Set_DAC_Output_RAW(65535);	// Reset DAC to max voltage (low current VOC)
 	Meas_Analog_Inputs(); // measure AIs
@@ -236,7 +238,7 @@ int main(void)
 				}
 
 				// Measure temp heat dissipation device 
-				#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
+				if (is_SysConfig_TEMP_Heat_Monitoring_On){
 					
 					// Set temp flag if temperature is too high
 					uint8_t temp_flag =0;
@@ -304,7 +306,14 @@ int main(void)
 					}
 
 
-				#endif
+				}
+				else {
+					CLR__Status_HEAT_NTC_Over_Temp;
+					CLR__Status_HEAT_NTC_Alert;
+					CLR__Status_HEAT_NTC_offline;
+					AI_HEAT_ADC_Present_Mask = 0;
+					AI_HEAT_ADC_Fault_Mask = 0;
+				}
 
 				// reset RTD Cal flag
 				CLR__Timer_TEMP_MEAS_Flag;	// Clear Timer flag at the end...
@@ -364,11 +373,10 @@ void Set_DDR_and_Default_State(){
 	}
 
 	//Heat monitoring device active
-	#ifdef PCBconfig_TEMP_Heat_Monitoring_enabled
+	if (is_SysConfig_TEMP_Heat_Monitoring_On){
 		DDR__DI__EXP_DIO_2; //Alert pin as input USE D2 IN HARDWARE 	
 		CLR__EXP_DIO_2;		//external pull-up
-	#endif 
-
+	}
 	
 	// FAN latching relay control
 	DDR__LRELAY_FAN_Off;

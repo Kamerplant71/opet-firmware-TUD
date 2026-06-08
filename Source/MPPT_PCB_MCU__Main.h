@@ -48,7 +48,7 @@
 #define PCBconfig_TEMP_Sensor_Type (Temp_Sensor__MAX31856)	// see above table of sensor type definitions to configure connected temperature readout on IOextender header
 															// also configured as EEPROM in SysConfig
 
-#define PCBconfig_TEMP_Heat_Monitoring_enabled // use <PCBconfig_TEMP_Heat_Monitoring_enabled> when using the modular heat dissipation device otherwise <PCBconfig_TEMP_Heat_Monitoring_enabled>
+#define PCBconfig_TEMP_Heat_Monitoring_enabled 1 // use <PCBconfig_TEMP_Heat_Monitoring_enabled> 1 when using the modular power dissipation device otherwise set 0
 
 #define PCBconfig_TEMP_Heat_Monitoring_devices 1 // Number of heat dissipation devices, set to 0 if none   
 
@@ -406,7 +406,10 @@
 				#define is_SysConfig_TEMP_On ((SysConfig & BIT(0)))
 //		Bit1:	Temp - RTD on SPI MAX31865
 				#define is_SysConfig_TEMP_MAX31865 ((SysConfig & BIT(1)))
-//		Bit2:	Temp - 
+//		Bit2:	Temp - Power dissipation device
+				#define SET__SysConfig_TEMP_Heat_Monitoring (SETBIT(SysConfig, 2))
+				#define CLR__SysConfig_TEMP_Heat_Monitoring (CLRBIT(SysConfig, 2))
+				#define is_SysConfig_TEMP_Heat_Monitoring_On ((SysConfig & BIT(2)))
 //		Bit3:	none
 //		Bit4:	none
 //		Bit5:	none

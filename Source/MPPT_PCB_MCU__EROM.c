@@ -124,7 +124,7 @@ void EEPROM_LOAD_VAL_CONFIG() {
 	}
 	else { // load default data, eeprom empty
 		Copy_String(Sample_Name, "NoErom!");
-		SysConfig = PCBconfig_TEMP_is_enabled; // see board config definitions section in Main.h
+		SysConfig = PCBconfig_TEMP_is_enabled | (PCBconfig_TEMP_Heat_Monitoring_enabled << 2); // see board config definitions section in Main.h
 		Temp_Sensor_Type = PCBconfig_TEMP_Sensor_Type;
 		F_CPU_CAL = F_CPU;
 		Timer_Control_Match = CONTROL_TIMER_MULT;
