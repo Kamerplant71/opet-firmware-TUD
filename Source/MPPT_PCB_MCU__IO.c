@@ -665,7 +665,7 @@ float TEMP_MAX31856_Measure(){
 
 	// start up the SPI, 
 	SETBIT(SPCR,SPR0);
-	SETBIT(SPCR,SPR1);	// clock is now fck/128
+	CLRBIT(SPCR,SPR1);	// clock is now fck/16
 	SETBIT(SPCR, CPHA);  // rising edge output
 
 	

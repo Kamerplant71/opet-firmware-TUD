@@ -185,6 +185,8 @@ int main(void)
 	CLR__Timer_CTR_Main_Flag;	//Reset timer flag
 	sei();
 	
+	bool TEMP_switch = true; //Switch measurering pv module and heat dissipation device
+	uint8_t TEMP_meas_i = 0; // At each cycle measure i'th device
 	// ETERNAL LOOP (till death do us apart)
  	while (1) 
 	{
@@ -194,7 +196,7 @@ int main(void)
 		// Check if Main meas timer start flag
 		// All other flags checked in this loop to keep synchronizations of measurements
 		if(is_Timer_CTR_Main_Flag_On) {
-			// measure analog inputs
+			// measure analog inputs		
 			Meas_Analog_Inputs();	// Measure Output
 			Check_Input_Range_Selection(); // set range as needed
 			//TODO: does PI_CTR selection need to be here - move to coms?
@@ -217,7 +219,7 @@ int main(void)
 			// Check Temp Meas start Flag - measure only if not in control cycle, to keep things within timing
 			else if(is_Timer_RTD_MEAS_Flag_On) {
 				// meas PT100 when data is ready (pin is low!!!)
-				if (is_SysConfig_TEMP_On){
+				if (is_SysConfig_TEMP_On && TEMP_switch){
 					uint32_t Temp_uint32;
 					float Temp_float;
 					if (Temp_Sensor_Type == Temp_Sensor__MAX31865) {
@@ -235,24 +237,27 @@ int main(void)
 					else if (Temp_Sensor_Type == Temp_Sensor__MAX31856){
 						AI_RTD_Temp = TEMP_MAX31856_Measure();
 					}
+
 				}
 
 				// Measure temp heat dissipation device 
-				if (is_SysConfig_TEMP_Heat_Monitoring_On){
+				if (is_SysConfig_TEMP_Heat_Monitoring_On && !TEMP_switch){ 
 					
+					if ((AI_HEAT_ADC_Present_Mask & (1 << TEMP_meas_i))) {  
+						Read_Temp_ADC121C021(TEMP_meas_i);;
+					}
+					TEMP_meas_i++;
+					if(TEMP_meas_i >= 8){
+						TEMP_meas_i = 0;
+					}
+
 					// Set temp flag if temperature is too high
 					uint8_t temp_flag =0;
-					
-					for (uint8_t i = 0; i < 8; i++) {
 
-						// If not present skip
+					for (uint8_t i = 0; i < 8; i++) {
 						if (!(AI_HEAT_ADC_Present_Mask & (1 << i))) {  
 							continue;
-						}
-
-						// Read temperature
-						Read_Temp_ADC121C021(i);
-
+						}						
 						// If over temp is active check a lower limit to avoid rapid on/off
 						if(is_Status_HEAT_NTC_Over_Temp){
 							if (AI_HEAT_NTC_Temp[i] >= (TEMP_MAX_Heat_NTC -5.0) ) {
@@ -277,7 +282,6 @@ int main(void)
 					else{
 						CLR__Status_HEAT_NTC_Over_Temp;
 					}
-
 
 					// Check alert pin
 					if (is_ADC121C021_ALERT_Active){
@@ -305,9 +309,8 @@ int main(void)
 						CLR__Status_HEAT_NTC_offline;	
 					}
 
-
 				}
-				else {
+				else if(!is_SysConfig_TEMP_Heat_Monitoring_On)	{
 					CLR__Status_HEAT_NTC_Over_Temp;
 					CLR__Status_HEAT_NTC_Alert;
 					CLR__Status_HEAT_NTC_offline;
@@ -315,6 +318,7 @@ int main(void)
 					AI_HEAT_ADC_Fault_Mask = 0;
 				}
 
+				TEMP_switch = !TEMP_switch; //Switch measurering pv module and heat dissipation device
 				// reset RTD Cal flag
 				CLR__Timer_TEMP_MEAS_Flag;	// Clear Timer flag at the end...
 			}

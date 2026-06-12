@@ -19,7 +19,7 @@
 // Definitions and constants
 
 
-#define I2C_TIMEOUT_COUNT 10000
+#define I2C_TIMEOUT_COUNT 500
 
 
 //Registers

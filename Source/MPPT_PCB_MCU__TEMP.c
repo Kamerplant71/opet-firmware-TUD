@@ -84,9 +84,9 @@ void Read_Temp_ADC121C021(uint8_t i){
 // I2C clock already configured in DIOExp_config_init as 111kHz
 void ADC121C021_Setup(uint8_t address){
 
-	ADC121C021_Set_Config(address);
 	ADC121C021_Set_Vlow(address);
 	ADC121C021_Set_Vhyst(address);
+	ADC121C021_Set_Config(address);
 
 }
 
@@ -97,7 +97,9 @@ uint8_t ADC121C021_ReadRaw(uint8_t i, uint16_t *raw_out){
 
     uint8_t msb = 0;
     uint8_t lsb = 0;
-
+	
+	//Set I2C to 400kHz
+	TWBR = 12;
     // Send start
     TWCR = (1 << TWINT) | (1 << TWSTA) | (1 << TWEN);
     if (!I2C_Wait_TWINT()) goto ADC121C021_ReadRaw_Error;
@@ -148,11 +150,13 @@ uint8_t ADC121C021_ReadRaw(uint8_t i, uint16_t *raw_out){
     _delay_us(IC2_COM_DELAY_us);
 
     *raw_out = (((uint16_t)msb << 8) | lsb) & 0x0FFF;
+	TWBR = 64;
     return 1;
 
 ADC121C021_ReadRaw_Error:
     TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
     _delay_us(IC2_COM_DELAY_us);
+	TWBR = 64;
     return 0;
 }
 
@@ -180,7 +184,7 @@ void ADC121C021_Set_Config(uint8_t address){
 	_delay_us(IC2_COM_DELAY_us);
 
 	// send data
-	TWDR = 0b11100010; // 0.4ksps auto conversion, Alert self clear,Enable alert ,Alert active low
+	TWDR = 0b11100100; // 0.4ksps auto conversion, Alert self clear,Enable alert ,Alert active low
 	TWCR = (1 << TWINT) | (1 << TWEN);
 	if (!I2C_Wait_TWINT()) goto ADC121C021_Setup_Config_Sent_Stop; // Wait for start to be sent
 	if ((TWSR & 0xF8) != MT_DATA_ACK) goto ADC121C021_Setup_Config_Sent_Stop;

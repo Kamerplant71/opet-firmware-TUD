@@ -70,7 +70,7 @@
 #endif /* Line_Freq_50 */
 
 #define DeviceName "OPET_R1.4C"
-#define FirmwareVersion "V1.16A-D08M03Y73"
+#define FirmwareVersion "V1.16A-D08M03Y75"
 
 //===========================================================================================
 // INCLUDE Libraries
