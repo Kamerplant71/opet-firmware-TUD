@@ -8,11 +8,17 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
+		HC|AVR = HC|AVR
+		LC|AVR = LC|AVR
 		Release|AVR = Release|AVR
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{95C92EDE-1E18-4296-A171-136AFF03B02A}.Debug|AVR.ActiveCfg = Debug|AVR
 		{95C92EDE-1E18-4296-A171-136AFF03B02A}.Debug|AVR.Build.0 = Debug|AVR
+		{95C92EDE-1E18-4296-A171-136AFF03B02A}.HC|AVR.ActiveCfg = HC|AVR
+		{95C92EDE-1E18-4296-A171-136AFF03B02A}.HC|AVR.Build.0 = HC|AVR
+		{95C92EDE-1E18-4296-A171-136AFF03B02A}.LC|AVR.ActiveCfg = LC|AVR
+		{95C92EDE-1E18-4296-A171-136AFF03B02A}.LC|AVR.Build.0 = LC|AVR
 		{95C92EDE-1E18-4296-A171-136AFF03B02A}.Release|AVR.ActiveCfg = Release|AVR
 		{95C92EDE-1E18-4296-A171-136AFF03B02A}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection

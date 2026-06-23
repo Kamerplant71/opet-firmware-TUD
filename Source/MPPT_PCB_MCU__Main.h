@@ -27,7 +27,7 @@
 //----------------------------------------
 // most of these need to be set before compiling to program the specific board, used for backwards compatibility
 //----------------------------------------
-#define PCBconfig_Current_is_340mA // use <PCBconfig_Current_is_150mA> for up to 150mA OR <PCBconfig_Current_is_15A> for up to 15A
+#define PCBconfig_Current_is_15A // use <PCBconfig_Current_is_150mA> for up to 150mA OR <PCBconfig_Current_is_15A> for up to 15A
 								   // use <PCBconfig_Current_is_340mA> for up to 340mA
 
 #define PCBconfig_DAQ_is_DAQ8550	// use <PCBconfig_DAQ_is_MAX5216> for MAX5216 for PCB rev <=1.3 
@@ -50,7 +50,7 @@
 
 #define PCBconfig_TEMP_Heat_Monitoring_enabled 1 // use <PCBconfig_TEMP_Heat_Monitoring_enabled> 1 when using the modular power dissipation device otherwise set 0
 
-#define PCBconfig_TEMP_Heat_Monitoring_devices 1 // Number of heat dissipation devices, set to 0 if none   
+#define PCBconfig_TEMP_Heat_Monitoring_devices 2 // Number of heat dissipation devices, set to 0 if none   
 
 
 #define Line_Freq_50		//use <Line_Freq_60> for 60Hz line frequency and <Line_Freq_50> for 50Hz
@@ -66,7 +66,7 @@
 #ifdef Line_Freq_50
 	#define	TIMER_1_COMP_MATCH 1249		//~5.0ms:: @ 20Mhz = 1562.5; 16MHz = 1250 (-1); @ 8MHz = (625 + 1?) // 64 clock divider
 	#define CONTROL_TIMER_MULT 5		// 5 (6) = every 25.0ms; 20ms/50Hz 4xAVR AI update over a single line cycle, ~ 5ms for settling
-	#define TEMP_MEAS_TIMER_MUILT 100	// 80 = ~500ms @ 5ms;
+	#define TEMP_MEAS_TIMER_MUILT 100	// 100 = ~500ms @ 5ms;
 #endif /* Line_Freq_50 */
 
 #define DeviceName "OPET_R1.4C"

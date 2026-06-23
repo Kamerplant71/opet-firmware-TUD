@@ -244,8 +244,10 @@ int main(void)
 				if (is_SysConfig_TEMP_Heat_Monitoring_On && !TEMP_switch){ 
 					
 					if ((AI_HEAT_ADC_Present_Mask & (1 << TEMP_meas_i))) {  
-						Read_Temp_ADC121C021(TEMP_meas_i);;
+						Read_Temp_ADC121C021(TEMP_meas_i); 
 					}
+
+					// Update ith device for next iteration
 					TEMP_meas_i++;
 					if(TEMP_meas_i >= 8){
 						TEMP_meas_i = 0;
